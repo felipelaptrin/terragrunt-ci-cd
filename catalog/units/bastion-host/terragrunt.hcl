@@ -6,6 +6,11 @@ terraform {
   source = "git::git@github.com:terraform-aws-modules/ec2-instance.git?ref=v5.7.1"
 }
 
+locals {
+  account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
+  account_name = local.account_vars.account_name
+}
+
 dependency "vpc" {
   config_path = values.vpc_path
   mock_outputs = {
