@@ -24,7 +24,7 @@ dependency "sg" {
 inputs = {
   name   = "${local.account_name}-bastion"
   vpc_id = dependency.vpc.outputs.vpc_id
-  subnet_id = module.vpc.private_subnets[0]
+  subnet_id = dependency.vpc.private_subnets[0]
   vpc_security_group_ids = [dependency.sg.security_group_id]
   instance_type = values.instance_type
   create_iam_instance_profile = true
