@@ -1,5 +1,4 @@
 locals {
-  aws_region = "us-east-1"
   azs = ["us-east-1a", "us-east-1b"]
   cidr = "10.205.0.0/16"
 }
