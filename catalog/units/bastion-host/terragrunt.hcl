@@ -22,7 +22,7 @@ dependency "sg" {
 }
 
 inputs = {
-  name   = "${include.root.local.account_name}-bastion"
+  name   = "${local.account_name}-bastion"
   vpc_id = dependency.vpc.outputs.vpc_id
   subnet_id = module.vpc.private_subnets[0]
   vpc_security_group_ids = [dependency.sg.security_group_id]

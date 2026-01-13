@@ -20,3 +20,14 @@ unit "bastion-sg" {
     name = "bastion-terraform-sg"
   }
 }
+
+unit "bastion" {
+  source = "git::git@github.com:felipelaptrin/terragrunt-ci-cd.git//catalog/units/bastion-host"
+  path = "bastion"
+  values = {
+    instance_type = "t4g.small"
+    vpc_path = "../vpc"
+    sg_path = "../bastion-sg"
+  }
+}
+
