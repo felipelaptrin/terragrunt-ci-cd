@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "git::git@github.com:terraform-aws-modules/terraform-aws-security-group.git?ref=5.3.1"
+  source = "git::git@github.com:terraform-aws-modules/terraform-aws-security-group.git?ref=v5.3.1"
 }
 
 dependency "vpc" {
