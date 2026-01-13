@@ -7,7 +7,7 @@ terraform {
 }
 
 dependency "vpc" {
-  config_path = "../vpc"
+  config_path = values.vpc_path
   mock_outputs = {
     vpc_id = "vpc-mock-outputs"
   }
