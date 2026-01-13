@@ -14,7 +14,9 @@ dependency "vpc" {
 }
 
 inputs = {
+  name   = values.name
   vpc_id = dependency.vpc.outputs.vpc_id
+
   egress_with_cidr_blocks = [
     {
       from_port   = 0

@@ -17,5 +17,6 @@ unit "bastion-sg" {
   path = "bastion-sg"
   values = {
     vpc_path = "../vpc"
+    name = "bastion-terraform-sg"
   }
 }
