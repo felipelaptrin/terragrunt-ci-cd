@@ -16,8 +16,6 @@ unit "bastion-sg" {
   source = "git::git@github.com:felipelaptrin/terragrunt-ci-cd.git//catalog/units/security-group"
   path = "bastion-sg"
   values = {
-    azs      = local.azs
-    cidr     = local.cidr
     vpc_path = "../vpc"
   }
 }
