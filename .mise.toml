@@ -23,7 +23,7 @@ run = "docker compose down"
 
 [tasks.plan-local]
 description = "Run terragrunt stack plan against local Floci environment"
-dir = "local/us-east-1/demo-stack"
+dir = "live/local/us-east-1/demo-stack"
 run = """
 AWS_ENDPOINT_URL=http://localhost:4566 \
   terragrunt stack run plan --non-interactive
@@ -31,7 +31,7 @@ AWS_ENDPOINT_URL=http://localhost:4566 \
 
 [tasks.apply-local]
 description = "Run terragrunt stack apply against local Floci environment"
-dir = "local/us-east-1/demo-stack"
+dir = "live/local/us-east-1/demo-stack"
 run = """
 AWS_ENDPOINT_URL=http://localhost:4566 \
   terragrunt stack run apply --non-interactive
