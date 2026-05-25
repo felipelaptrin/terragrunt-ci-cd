@@ -1,0 +1,124 @@
+name: Terragrunt
+description: Run Terragrunt plan or apply on all stacks under an env/region directory
+
+inputs:
+  action:
+    description: "Action to perform: plan or apply"
+    required: true
+  environment:
+    description: "Environment label used in PR comments (e.g. DEV, PROD)"
+    required: true
+  aws_region:
+    description: "AWS region"
+    required: true
+  working_dir:
+    description: "Env/region directory (e.g. live/dev/us-east-1). All stacks underneath are discovered automatically."
+    required: true
+  aws_role_arn:
+    description: "AWS IAM Role ARN to assume via OIDC"
+    required: true
+  github_token:
+    description: "GitHub token for posting PR plan comments"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install tools via mise
+      uses: jdx/mise-action@v4
+
+    - name: Set up Terraform plugin cache
+      shell: bash
+      run: |
+        mkdir -p ~/.terraform.d/plugin-cache
+        echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >> $GITHUB_ENV
+        echo "TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true" >> $GITHUB_ENV
+
+    - name: Cache Terraform providers
+      uses: actions/cache@v4
+      with:
+        path: ~/.terraform.d/plugin-cache
+        key: ${{ runner.os }}-terraform-plugins-${{ hashFiles('**/*.hcl') }}
+        restore-keys: |
+          ${{ runner.os }}-terraform-plugins-
+
+    - name: Cache Terragrunt modules
+      uses: actions/cache@v4
+      with:
+        path: ~/.terragrunt-cache
+        key: ${{ runner.os }}-terragrunt-${{ hashFiles('**/*.hcl') }}
+        restore-keys: |
+          ${{ runner.os }}-terragrunt-
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws_role_arn }}
+        role-session-name: GitHub-Actions-${{ inputs.environment }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Terragrunt plan
+      id: plan
+      if: inputs.action == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: |
+        set +e
+        OUTPUT=$(terragrunt run --all plan --non-interactive 2>&1)
+        EXIT_CODE=$?
+        DELIMITER=$(openssl rand -hex 16)
+        echo "output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "${OUTPUT}" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT
+        exit $EXIT_CODE
+
+    - name: Comment plan on PR
+      if: inputs.action == 'plan' && github.event_name == 'pull_request' && inputs.github_token != ''
+      uses: actions/github-script@v7
+      env:
+        PLAN_OUTPUT: ${{ steps.plan.outputs.output }}
+      with:
+        github-token: ${{ inputs.github_token }}
+        script: |
+          const header = `### Terragrunt Plan — ${{ inputs.environment }} (${{ inputs.aws_region }})`;
+          const output = process.env.PLAN_OUTPUT || '(no output)';
+          const body = [
+            header,
+            '',
+            '<details><summary>Show Plan</summary>',
+            '',
+            '```',
+            output,
+            '```',
+            '',
+            '</details>',
+          ].join('\n');
+
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const existing = comments.find(c => c.body.startsWith(header));
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }
+
+    - name: Terragrunt apply
+      if: inputs.action == 'apply'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: terragrunt run --all apply --non-interactive
