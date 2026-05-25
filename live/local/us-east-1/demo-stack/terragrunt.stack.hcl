@@ -24,13 +24,3 @@ unit "sqs" {
     queue_name = "${local.environment}-terragrunt-ci-cd-${local.aws_region}"
   }
 }
-
-# Direct community module reference — no unit dir needed for one-off resources
-unit "sns" {
-  source = "tfr:///terraform-aws-modules/sns/aws?version=6.1.0"
-  path   = "sns"
-
-  values = {
-    name = "${local.environment}-terragrunt-ci-cd-${local.aws_region}"
-  }
-}

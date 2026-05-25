@@ -29,7 +29,6 @@ remote_state {
     skip_metadata_api_check     = local.environment == "local" ? true : false
     skip_requesting_account_id  = local.environment == "local" ? true : false
     use_path_style              = local.environment == "local" ? true : false
-    force_path_style            = local.environment == "local" ? true : false
   }
 }
 
@@ -47,11 +46,6 @@ generate "provider" {
       skip_metadata_api_check     = true
       skip_requesting_account_id  = true
       s3_use_path_style           = true
-
-      endpoints {
-        s3  = "http://localhost:4566"
-        sqs = "http://localhost:4566"
-      }
       %{endif}
 
       default_tags {

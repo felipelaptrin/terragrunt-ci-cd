@@ -9,6 +9,7 @@ jq = "1.8.1"
 [tasks.floci-up]
 description = "Start Floci (local AWS emulator) and bootstrap state bucket"
 run = """
+echo '[INFO] Initializing Floci using Docker Compose'
 docker compose up -d
 sleep 5
 AWS_ENDPOINT_URL=http://localhost:4566 \
@@ -26,7 +27,10 @@ description = "Run terragrunt plan on all stacks in local environment"
 dir = "live/local/us-east-1"
 run = """
 AWS_ENDPOINT_URL=http://localhost:4566 \
-  terragrunt run --all plan --non-interactive
+AWS_ACCESS_KEY_ID=test \
+AWS_SECRET_ACCESS_KEY=test \
+AWS_DEFAULT_REGION=us-east-1 \
+  terragrunt run --all plan --non-interactive --backend-bootstrap
 """
 
 [tasks.apply-local]
@@ -34,7 +38,10 @@ description = "Run terragrunt apply on all stacks in local environment"
 dir = "live/local/us-east-1"
 run = """
 AWS_ENDPOINT_URL=http://localhost:4566 \
-  terragrunt run --all apply --non-interactive
+AWS_ACCESS_KEY_ID=test \
+AWS_SECRET_ACCESS_KEY=test \
+AWS_DEFAULT_REGION=us-east-1 \
+  terragrunt run --all apply --non-interactive --backend-bootstrap
 """
 
 [tasks.pre-commit-install]
