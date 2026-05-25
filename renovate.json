@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "America/Sao_Paulo",
+  "enabledManagers": ["mise", "terraform", "terragrunt", "github-actions"],
+  "packageRules": [
+    {
+      "matchManagers": ["mise", "terraform", "terragrunt", "github-actions"],
+      "groupName": "dependencies"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+[tools]
+terraform = "1.15.4"
+terragrunt = "1.0.6"
+pre-commit = "4.6.0"
+tflint = "0.62.1"
+trivy = "0.70.0"
+jq = "1.8.1"
+
+[tasks.floci-up]
+description = "Start Floci (local AWS emulator) and bootstrap state bucket"
+run = """
+docker compose up -d
+sleep 5
+AWS_ENDPOINT_URL=http://localhost:4566 \
+  aws s3api create-bucket \
+    --bucket terragrunt-states-local \
+    --region us-east-1
+"""
+
+[tasks.floci-down]
+description = "Stop Floci"
+run = "docker compose down"
+
+[tasks.plan-local]
+description = "Run terragrunt stack plan against local Floci environment"
+dir = "local/us-east-1/demo-stack"
+run = """
+AWS_ENDPOINT_URL=http://localhost:4566 \
+  terragrunt stack run plan --non-interactive
+"""
+
+[tasks.apply-local]
+description = "Run terragrunt stack apply against local Floci environment"
+dir = "local/us-east-1/demo-stack"
+run = """
+AWS_ENDPOINT_URL=http://localhost:4566 \
+  terragrunt stack run apply --non-interactive
+"""
+
+[tasks.pre-commit-install]
+description = "Install pre-commit git hooks"
+run = "pre-commit install"
+
+[tasks.pre-commit]
+description = "Run all pre-commit hooks against all files"
+run = "pre-commit run --all-files"
