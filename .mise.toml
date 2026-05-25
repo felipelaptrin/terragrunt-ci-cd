@@ -11,11 +11,6 @@ description = "Start Floci (local AWS emulator) and bootstrap state bucket"
 run = """
 echo '[INFO] Initializing Floci using Docker Compose'
 docker compose up -d
-sleep 5
-AWS_ENDPOINT_URL=http://localhost:4566 \
-  aws s3api create-bucket \
-    --bucket terragrunt-states-local \
-    --region us-east-1
 """
 
 [tasks.floci-down]
