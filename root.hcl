@@ -6,6 +6,17 @@ locals {
   environment = local.account_vars.locals.environment
   account_id  = local.accounts[local.environment].id
   aws_region  = local.region_vars.locals.aws_region
+
+  # Tags: three-layer merge — root defaults < account-level tags.yml < unit-level tags.yml.
+  # To override or extend tags, add a tags.yml beside the relevant account.hcl or unit.
+  default_tags = {
+    Project     = "Terragrunt CI/CD"
+    ManagedBy   = "Terragrunt"
+    Environment = local.environment
+  }
+  parent_override_tags = try(yamldecode(file(find_in_parent_folders("tags.yml"))), {})
+  override_tags        = try(yamldecode(file("${get_terragrunt_dir()}/tags.yml")), {})
+  merged_tags          = merge(local.default_tags, local.parent_override_tags, local.override_tags)
 }
 
 remote_state {
@@ -57,11 +68,7 @@ generate "provider" {
       %{endif}
 
       default_tags {
-        tags = {
-          Project     = "Terragrunt CI/CD"
-          Environment = "${local.environment}"
-          ManagedBy   = "Terragrunt"
-        }
+        tags = ${jsonencode(local.merged_tags)}
       }
     }
   EOF
