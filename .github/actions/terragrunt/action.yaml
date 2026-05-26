@@ -58,6 +58,12 @@ runs:
         role-session-name: GitHub-Actions-${{ inputs.environment }}
         aws-region: ${{ inputs.aws_region }}
 
+    - name: Terragrunt init
+      if: inputs.action == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: terragrunt run --all init --non-interactive
+
     - name: Terragrunt plan
       id: plan
       if: inputs.action == 'plan'
