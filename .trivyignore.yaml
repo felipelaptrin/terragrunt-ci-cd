@@ -1,1 +1,3 @@
-misconfigurations: []
+misconfigurations:
+  - id: AVD-AWS-0132
+    statement: S3 buckets use AWS-managed SSE-S3 encryption, which is sufficient for our threat model. Customer-managed KMS keys are not required.

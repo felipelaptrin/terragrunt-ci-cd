@@ -9,7 +9,8 @@ A reference repository demonstrating how to deploy infrastructure using **Terrag
 - **Terragrunt v1 explicit stacks** — `terragrunt.stack.hcl` files compose multiple units into deployable stacks
 - **Two module patterns** — reusable `units/` for repeated infrastructure, inline `tfr:///` for one-off resources
 - **Community Terraform modules** — no local wrapper modules; `terraform-aws-modules` referenced directly
-- **Pre-commit hooks** — `terragrunt_fmt`, `tflint`, `trivy` (HIGH/CRITICAL), and file hygiene checks
+- **Pre-commit hooks** — `terragrunt-hcl-fmt` and file hygiene checks
+- **Trivy security scan** — runs in CI after `terragrunt plan`, scanning `tfplan.json` with resolved variable values (HIGH/CRITICAL)
 - **Local development** — Floci (local AWS emulator) via Docker Compose for offline plan/apply
 - **GitHub Actions** — parallel plans on PRs with PR comments, sequential apply (dev → prod with manual approval)
 - **OIDC authentication** — no long-lived AWS credentials; GitHub Actions assumes IAM roles via OIDC
@@ -27,7 +28,7 @@ A reference repository demonstrating how to deploy infrastructure using **Terrag
 ## Quick Start (Local Development)
 
 ```bash
-# Install all pinned tools (terraform, terragrunt, pre-commit, tflint, trivy...)
+# Install all pinned tools (terraform, terragrunt, pre-commit, trivy...)
 mise install
 
 # Install pre-commit hooks

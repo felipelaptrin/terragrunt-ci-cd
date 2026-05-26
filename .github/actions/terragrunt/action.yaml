@@ -65,13 +65,35 @@ runs:
       working-directory: ${{ inputs.working_dir }}
       run: |
         set +e
-        OUTPUT=$(terragrunt run --all plan --non-interactive 2>&1)
+        OUTPUT=$(terragrunt run --all plan --non-interactive -- -out=tfplan 2>&1)
         EXIT_CODE=$?
         DELIMITER=$(openssl rand -hex 16)
         echo "output<<${DELIMITER}" >> $GITHUB_OUTPUT
         echo "${OUTPUT}" >> $GITHUB_OUTPUT
         echo "${DELIMITER}" >> $GITHUB_OUTPUT
         exit $EXIT_CODE
+
+    - name: Convert plans to JSON for Trivy
+      if: inputs.action == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: |
+        find . -name "tfplan" -path "*/.terragrunt-cache/*" | while read plan_file; do
+          dir=$(dirname "$plan_file")
+          terraform -chdir="$dir" show -json tfplan > "${plan_file}.json"
+        done
+
+    - name: Trivy security scan
+      if: inputs.action == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: |
+        find . -name "tfplan.json" -path "*/.terragrunt-cache/*" | while read plan_json; do
+          trivy config "$plan_json" \
+            --severity HIGH,CRITICAL \
+            --ignorefile "${GITHUB_WORKSPACE}/.trivyignore.yaml" \
+            --exit-code 1
+        done
 
     - name: Comment plan on PR
       if: inputs.action == 'plan' && github.event_name == 'pull_request' && inputs.github_token != ''
