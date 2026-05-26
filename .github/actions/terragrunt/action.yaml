@@ -62,7 +62,7 @@ runs:
       if: inputs.action == 'plan'
       shell: bash
       working-directory: ${{ inputs.working_dir }}
-      run: terragrunt run --all init --non-interactive
+      run: terragrunt run --all init
 
     - name: Terragrunt plan
       id: plan
