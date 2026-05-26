@@ -67,6 +67,7 @@ runs:
         set +e
         OUTPUT=$(terragrunt run --all plan --non-interactive -- -out=tfplan 2>&1)
         EXIT_CODE=$?
+        echo "$OUTPUT"
         DELIMITER=$(openssl rand -hex 16)
         echo "output<<${DELIMITER}" >> $GITHUB_OUTPUT
         echo "${OUTPUT}" >> $GITHUB_OUTPUT
