@@ -22,13 +22,18 @@ remote_state {
     use_lockfile = true
 
     # Floci overrides for local environment
-    endpoint                    = local.environment == "local" ? "http://localhost:4566" : null
     access_key                  = local.environment == "local" ? "test" : null
     secret_key                  = local.environment == "local" ? "test" : null
     skip_credentials_validation = local.environment == "local" ? true : false
     skip_metadata_api_check     = local.environment == "local" ? true : false
     skip_requesting_account_id  = local.environment == "local" ? true : false
     use_path_style              = local.environment == "local" ? true : false
+    ## For some reason this is required in order to make Floci work with Terragrunt
+    skip_bucket_root_access            = local.environment == "local" ? true : false
+    skip_bucket_enforced_tls           = local.environment == "local" ? true : false
+    skip_bucket_versioning             = local.environment == "local" ? true : false
+    skip_bucket_ssencryption           = local.environment == "local" ? true : false
+    skip_bucket_public_access_blocking = local.environment == "local" ? true : false
   }
 }
 

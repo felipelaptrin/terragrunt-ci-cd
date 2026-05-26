@@ -11,6 +11,12 @@ description = "Start Floci (local AWS emulator) and bootstrap state bucket"
 run = """
 echo '[INFO] Initializing Floci using Docker Compose'
 docker compose up -d
+echo '[INFO] Waiting 5s before creating S3 Bucket for local environment'
+sleep 5
+AWS_ENDPOINT_URL=http://localhost:4566 AWS_SECRET_ACCESS_KEY=test AWS_ACCESS_KEY_ID=test aws s3api create-bucket \
+  --bucket terragrunt-states-local \
+  --region us-east-1 \
+  --output text >/dev/null 2>&1|| echo "Terragrunt States bucket might already exist"
 """
 
 [tasks.floci-down]
@@ -25,7 +31,7 @@ AWS_ENDPOINT_URL=http://localhost:4566 \
 AWS_ACCESS_KEY_ID=test \
 AWS_SECRET_ACCESS_KEY=test \
 AWS_DEFAULT_REGION=us-east-1 \
-  terragrunt run --all plan --non-interactive --backend-bootstrap
+  terragrunt run --all plan --non-interactive
 """
 
 [tasks.apply-local]
@@ -36,7 +42,7 @@ AWS_ENDPOINT_URL=http://localhost:4566 \
 AWS_ACCESS_KEY_ID=test \
 AWS_SECRET_ACCESS_KEY=test \
 AWS_DEFAULT_REGION=us-east-1 \
-  terragrunt run --all apply --non-interactive --backend-bootstrap
+  terragrunt run --all apply --non-interactive
 """
 
 [tasks.pre-commit-install]
