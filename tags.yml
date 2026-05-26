@@ -1,0 +1,3 @@
+Project: "Terragrunt CI/CD"
+ManagedBy: "Terragrunt"
+GitRepository: "https://github.com/felipelaptrin/terragrunt-ci-cd"
