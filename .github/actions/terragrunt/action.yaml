@@ -58,6 +58,15 @@ runs:
         role-session-name: GitHub-Actions-${{ inputs.environment }}
         aws-region: ${{ inputs.aws_region }}
 
+    - name: Bootstrap state bucket
+      shell: bash
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        ENV_LOWER=$(echo "${{ inputs.environment }}" | tr '[:upper:]' '[:lower:]')
+        BUCKET_NAME="${ENV_LOWER}-terragrunt-states-${ACCOUNT_ID}"
+        aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null || \
+          aws s3api create-bucket --bucket "$BUCKET_NAME" --region "${{ inputs.aws_region }}"
+
     - name: Terragrunt init
       if: inputs.action == 'plan'
       shell: bash
