@@ -11,6 +11,10 @@ permissions:
   pull-requests: write
   id-token: write
 
+env:
+  DEV_TERRAFORM_ROLE: arn:aws:iam::937168356724:role/GitHubActions
+  PROD_TERRAFORM_ROLE: arn:aws:iam::730335516527:role/GitHubActions
+
 jobs:
   ci:
     name: CI
@@ -50,7 +54,7 @@ jobs:
           environment: DEV
           aws_region: us-east-1
           working_dir: live/dev/us-east-1
-          aws_role_arn: ${{ vars.DEV_TERRAFORM_ROLE }}
+          aws_role_arn: ${{ env.DEV_TERRAFORM_ROLE }}
           github_token: ${{ github.token }}
 
   apply-dev-us-east-1:
@@ -71,7 +75,7 @@ jobs:
           environment: DEV
           aws_region: us-east-1
           working_dir: live/dev/us-east-1
-          aws_role_arn: ${{ vars.DEV_TERRAFORM_ROLE }}
+          aws_role_arn: ${{ env.DEV_TERRAFORM_ROLE }}
 
   # ===== PROD =====
 
@@ -89,7 +93,7 @@ jobs:
           environment: PROD
           aws_region: us-east-1
           working_dir: live/prod/us-east-1
-          aws_role_arn: ${{ vars.PROD_TERRAFORM_ROLE }}
+          aws_role_arn: ${{ env.PROD_TERRAFORM_ROLE }}
           github_token: ${{ github.token }}
 
   apply-prod-us-east-1:
@@ -110,4 +114,4 @@ jobs:
           environment: PROD
           aws_region: us-east-1
           working_dir: live/prod/us-east-1
-          aws_role_arn: ${{ vars.PROD_TERRAFORM_ROLE }}
+          aws_role_arn: ${{ env.PROD_TERRAFORM_ROLE }}

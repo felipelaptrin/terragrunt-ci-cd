@@ -13,7 +13,7 @@ docker compose up -d
 echo '[INFO] Waiting 5s before creating S3 Bucket for local environment'
 sleep 5
 AWS_ENDPOINT_URL=http://localhost:4566 AWS_SECRET_ACCESS_KEY=test AWS_ACCESS_KEY_ID=test aws s3api create-bucket \
-  --bucket terragrunt-states-local \
+  --bucket local-terragrunt-states-000000000000 \
   --region us-east-1 \
   --output text >/dev/null 2>&1|| echo "Terragrunt States bucket might already exist"
 """

@@ -3,11 +3,12 @@ include "root" {
 }
 
 terraform {
-  source = "tfr:///terraform-aws-modules/s3-bucket/aws?version=4.6.0"
+  source = "tfr:///terraform-aws-modules/s3-bucket/aws?version=5.13.0"
 }
 
 inputs = {
   bucket                  = values.bucket_name
+  attach_public_policy    = true
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true

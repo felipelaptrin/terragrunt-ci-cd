@@ -23,7 +23,7 @@ remote_state {
     if_exists = "overwrite_terragrunt"
   }
   config = {
-    bucket  = "terragrunt-states-${local.environment}"
+    bucket  = "${local.environment}-terragrunt-states-${local.account_id}"
     key     = "${path_relative_to_include()}/terraform.tfstate"
     region  = local.aws_region
     encrypt = true
@@ -60,7 +60,6 @@ generate "provider" {
       secret_key                  = "test"
       skip_credentials_validation = true
       skip_metadata_api_check     = true
-      skip_requesting_account_id  = true
       s3_use_path_style           = true
       %{endif}
 
