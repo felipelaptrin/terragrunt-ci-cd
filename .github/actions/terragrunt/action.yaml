@@ -84,18 +84,6 @@ runs:
         echo "${DELIMITER}" >> $GITHUB_OUTPUT
         exit $EXIT_CODE
 
-    - name: Convert plans to JSON for Trivy
-      if: inputs.action == 'plan'
-      shell: bash
-      working-directory: ${{ inputs.working_dir }}
-      run: |
-        echo "Converting binary tfplan files to JSON for Trivy scanning"
-        find . -name "tfplan" -path "*/.terragrunt-cache/*" | while read plan_file; do
-          dir=$(dirname "$plan_file")
-          echo "Converting: $plan_file"
-          terraform -chdir="$dir" show -json tfplan > "${plan_file}.json"
-        done
-
     - name: Collect plan outputs per unit
       id: collect-plans
       if: inputs.action == 'plan'
@@ -157,13 +145,13 @@ runs:
       run: |
         echo "Scanning plan files for HIGH/CRITICAL misconfigurations"
         TRIVY_EXIT=0
-        while IFS= read -r plan_json; do
-          echo "Scanning: $plan_json"
-          trivy config "$plan_json" \
+        while IFS= read -r plan_file; do
+          echo "Scanning: $plan_file"
+          trivy config "$plan_file" \
             --severity HIGH,CRITICAL \
             --ignorefile "${GITHUB_WORKSPACE}/.trivyignore.yaml" \
             --exit-code 1 || TRIVY_EXIT=1
-        done < <(find . -name "tfplan.json" -path "*/.terragrunt-cache/*")
+        done < <(find . -name "tfplan" -path "*/.terragrunt-cache/*")
         exit $TRIVY_EXIT
 
     - name: Terragrunt apply
