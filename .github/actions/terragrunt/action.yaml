@@ -31,12 +31,13 @@ runs:
     - name: Set up Terraform plugin cache
       shell: bash
       run: |
+        echo "Setting up Terraform plugin cache at ~/.terraform.d/plugin-cache"
         mkdir -p ~/.terraform.d/plugin-cache
         echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >> $GITHUB_ENV
         echo "TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true" >> $GITHUB_ENV
 
     - name: Cache Terraform providers
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.terraform.d/plugin-cache
         key: ${{ runner.os }}-terraform-plugins-${{ hashFiles('**/*.hcl') }}
@@ -44,7 +45,7 @@ runs:
           ${{ runner.os }}-terraform-plugins-
 
     - name: Cache Terragrunt modules
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.terragrunt-cache
         key: ${{ runner.os }}-terragrunt-${{ hashFiles('**/*.hcl') }}
@@ -52,7 +53,7 @@ runs:
           ${{ runner.os }}-terragrunt-
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ inputs.aws_role_arn }}
         role-session-name: GitHub-Actions-${{ inputs.environment }}
@@ -62,7 +63,9 @@ runs:
       if: inputs.action == 'plan'
       shell: bash
       working-directory: ${{ inputs.working_dir }}
-      run: terragrunt run --all init
+      run: |
+        echo "Initializing all units under ${{ inputs.working_dir }}"
+        terragrunt run --all init
 
     - name: Terragrunt plan
       id: plan
@@ -70,6 +73,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_dir }}
       run: |
+        echo "Running terragrunt plan across all units in ${{ inputs.working_dir }}"
         set +e
         OUTPUT=$(terragrunt run --all plan --non-interactive -- -out=tfplan 2>&1)
         EXIT_CODE=$?
@@ -85,38 +89,15 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_dir }}
       run: |
+        echo "Converting binary tfplan files to JSON for Trivy scanning"
         find . -name "tfplan" -path "*/.terragrunt-cache/*" | while read plan_file; do
           dir=$(dirname "$plan_file")
+          echo "Converting: $plan_file"
           terraform -chdir="$dir" show -json tfplan > "${plan_file}.json"
         done
 
-    - name: Trivy security scan
-      id: trivy
-      if: inputs.action == 'plan'
-      shell: bash
-      working-directory: ${{ inputs.working_dir }}
-      run: |
-        set +e
-        TRIVY_EXIT=0
-        OUTPUT=""
-        while IFS= read -r plan_json; do
-          RESULT=$(trivy config "$plan_json" \
-            --severity HIGH,CRITICAL \
-            --ignorefile "${GITHUB_WORKSPACE}/.trivyignore.yaml" \
-            --exit-code 1 2>&1)
-          CODE=$?
-          OUTPUT="${OUTPUT}${RESULT}"$'\n'
-          if [ "$CODE" -ne 0 ]; then TRIVY_EXIT=$CODE; fi
-        done < <(find . -name "tfplan.json" -path "*/.terragrunt-cache/*")
-        echo "$OUTPUT"
-        DELIMITER=$(openssl rand -hex 16)
-        echo "output<<${DELIMITER}" >> $GITHUB_OUTPUT
-        echo "${OUTPUT}" >> $GITHUB_OUTPUT
-        echo "${DELIMITER}" >> $GITHUB_OUTPUT
-        exit $TRIVY_EXIT
-
     - name: Comment plan on PR
-      if: always() && inputs.action == 'plan' && github.event_name == 'pull_request' && inputs.github_token != ''
+      if: inputs.action == 'plan' && github.event_name == 'pull_request' && inputs.github_token != ''
       uses: borchero/terraform-plan-comment@v3
       env:
         TG_LOG_CUSTOM_FORMAT: "%msg(path=relative)"
@@ -127,52 +108,26 @@ runs:
         working-directory: ${{ inputs.working_dir }}
         header: "Terragrunt Plan — ${{ inputs.environment }} (${{ inputs.aws_region }})"
 
-    - name: Comment Trivy on PR
-      if: always() && steps.trivy.outcome == 'failure' && inputs.action == 'plan' && github.event_name == 'pull_request' && inputs.github_token != ''
-      uses: actions/github-script@v7
-      env:
-        TRIVY_OUTPUT: ${{ steps.trivy.outputs.output }}
-      with:
-        github-token: ${{ inputs.github_token }}
-        script: |
-          const header = `### Trivy Security Scan — ${{ inputs.environment }} (${{ inputs.aws_region }})`;
-          const output = process.env.TRIVY_OUTPUT || '';
-          const body = [
-            header,
-            '',
-            '<details><summary>Show Findings</summary>',
-            '',
-            '```',
-            output,
-            '```',
-            '',
-            '</details>',
-          ].join('\n');
-
-          const { data: comments } = await github.rest.issues.listComments({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-          });
-          const existing = comments.find(c => c.body.startsWith(header));
-          if (existing) {
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: existing.id,
-              body,
-            });
-          } else {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body,
-            });
-          }
+    - name: Trivy security scan
+      if: inputs.action == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_dir }}
+      run: |
+        echo "Scanning plan files for HIGH/CRITICAL misconfigurations"
+        TRIVY_EXIT=0
+        while IFS= read -r plan_json; do
+          echo "Scanning: $plan_json"
+          trivy config "$plan_json" \
+            --severity HIGH,CRITICAL \
+            --ignorefile "${GITHUB_WORKSPACE}/.trivyignore.yaml" \
+            --exit-code 1 || TRIVY_EXIT=1
+        done < <(find . -name "tfplan.json" -path "*/.terragrunt-cache/*")
+        exit $TRIVY_EXIT
 
     - name: Terragrunt apply
       if: inputs.action == 'apply'
       shell: bash
       working-directory: ${{ inputs.working_dir }}
-      run: terragrunt run --all apply --non-interactive
+      run: |
+        echo "Applying changes across all units in ${{ inputs.working_dir }}"
+        terragrunt run --all apply --non-interactive
