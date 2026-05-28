@@ -8,6 +8,7 @@ terraform {
 
 inputs = {
   bucket                  = values.bucket_name
+  attach_public_policy    = true
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
