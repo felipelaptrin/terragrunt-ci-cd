@@ -97,6 +97,10 @@ runs:
           unit=$(echo "$plan" | awk -F'/.terragrunt-stack/' '{print $2}' | awk -F'/' '{print $1}')
           echo "Showing plan for unit: $unit"
           output=$(terraform -chdir="$dir" show -no-color tfplan)
+          if echo "$output" | grep -q "No changes. Your infrastructure matches the configuration"; then
+            echo "Skipping unit with no changes: $unit"
+            continue
+          fi
           COMBINED="${COMBINED}<details><summary><b>${unit}</b></summary>"$'\n\n'"\`\`\`hcl"$'\n'"${output}"$'\n'"\`\`\`"$'\n\n'"</details>"$'\n\n'
         done < <(find . -name "tfplan" -path "*/.terragrunt-cache/*" | sort)
         DELIMITER=$(openssl rand -hex 16)
